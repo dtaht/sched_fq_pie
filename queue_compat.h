@@ -1,5 +1,6 @@
 #ifndef __NET_SCHED_QCOMPAT_H
 #define __NET_SCHED_QCOMPAT_H
+#include <linux/version.h>
 
 /* Backport some stuff. FIXME: I dont know when these entered 
    the kernel exactly. */
