@@ -54,6 +54,10 @@
 #include <net/inet_ecn.h>
 #include "pie.h"
 
+#if KERNEL_VERSION(4, 4, 11) > LINUX_VERSION_CODE
+#define qdisc_tree_reduce_backlog(_a,_b,_c) qdisc_tree_decrease_qlen(_a,_b)
+#endif
+
 /*
  * Per flow structure, dynamically allocated
  */
@@ -728,7 +732,7 @@ static int fq_pie_change(struct Qdisc *sch, struct nlattr *opt)
 {
 	struct fq_pie_sched_data *q = qdisc_priv(sch);
 	struct nlattr *tb[TCA_FQ_PIE_MAX + 1];
-	int err, drop_count = 0;
+	int err, drop_count = 0, drop_len = 0;
 	u32 fq_pie_log;
 
 	if (!opt)
@@ -814,10 +818,11 @@ static int fq_pie_change(struct Qdisc *sch, struct nlattr *opt)
 
 		if (!skb)
 			break;
+		drop_len += qdisc_pkt_len(skb);
 		kfree_skb(skb);
 		drop_count++;
 	}
-	qdisc_tree_decrease_qlen(sch, drop_count);
+	qdisc_tree_reduce_backlog(sch, drop_count, drop_len);
 
 	sch_tree_unlock(sch);
 	return err;
